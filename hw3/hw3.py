@@ -13,7 +13,7 @@ Carmichael = [
     844154128953833755776750022681,
     365376903642671522645639268043801,
     1334733877147062382486934807105197899496002201113849920496510541601,
-    #2887148238050771212671429597130393991977609459279722700926516024197432303799152733116328983144639225941977803110929349655578418949441740933805615113979999421542416933972905423711002751042080134966731755152859226962916775325475044445856101949404200039904432116776619949629539250452698719329070373564032273701278453899126120309244841494728976885406024976768122077071687938121709811322297802059565867
+    2887148238050771212671429597130393991977609459279722700926516024197432303799152733116328983144639225941977803110929349655578418949441740933805615113979999421542416933972905423711002751042080134966731755152859226962916775325475044445856101949404200039904432116776619949629539250452698719329070373564032273701278453899126120309244841494728976885406024976768122077071687938121709811322297802059565867
 ]
 
 # Modeled after DPV Figure 1.4
@@ -38,8 +38,48 @@ def r_modexp(x, y, N):
 # Output: x**y mod N
 def modexp(x, y, N):
 
-    pass
+    # check trivial
+    if y <= 0:
+        return 1
+    if x == 0:
+        return 0
 
+    z = 1 # init result z
+
+    # loop though dividing y by two
+    while y >= 1:
+
+        # y odd
+        if (y & 1) == 1:
+            z = (z*x) % N # z holds result
+        
+        x = (x*x) % N # multiply by x and take mod N
+        y = (y >> 1) >> 0 # divide by two and floor
+
+    return z
+
+def power(x, y, p) :
+    res = 1     # Initialize result
+ 
+    # Update x if it is more
+    # than or equal to p
+    x = x % p 
+     
+    if (x == 0) :
+        return 0
+ 
+    while (y > 0) :
+         
+        # If y is odd, multiply
+        # x with result
+        if ((y & 1) == 1) :
+            res = (res * x) % p
+ 
+        # y must be even now
+        y = y >> 1      # y = y/2
+        x = (x * x) % p
+         
+    return res
 
 # Modeled after DPV Figure 1.8
 # Input: Positive integer N, positive integer K
@@ -57,7 +97,7 @@ def primality1(N, K):
     for a_i in test_nums:
         
         # if pass Fermat's little theorem
-        if r_modexp(a_i, N-1, N) == 1 % N:
+        if modexp(a_i, N-1, N) == 1 % N:
             num_pass += 1
         else: is_prime = False
     
@@ -86,7 +126,7 @@ def primality2(N, K):
 
     for a_i in test_nums:
         
-        z = r_modexp(a_i, u, N)
+        z = modexp(a_i, u, N)
 
         # if pass Fermat's little theorem
         if z == 1 % N:
@@ -133,6 +173,18 @@ def testRModexp():
         print('Test: {}**{} mod {} = {} == {}'.format( x, y, N, ans, (x**y) % N ) )
 
 
+def testModexp():
+
+    print('- Testing modexp() -')
+
+    for i in range(5):
+        x = random.randint(1,100)
+        y = random.randint(1,30)
+        N = random.randint(1,100)
+        ans = modexp(x,y,N)
+        print('Test: {}**{} mod {} = {} == {}'.format( x, y, N, ans, (x**y) % N ) )
+
+
 def testPrimality1(K):
 
     print('- Testing primality1( K = {} ) -'.format( K ))
@@ -165,6 +217,9 @@ def testPrimality2(K):
 print('\n-- Lab 3: Primality Testing --\n')
 
 testRModexp() # sanity check
+print('')
+testModexp() # sanity check
+
 print('')
 
 k_vals = [10, 20, 50, 100, 1000]
