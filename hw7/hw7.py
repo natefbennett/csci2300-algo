@@ -18,24 +18,36 @@ class HeapNode():
     def __repr__(self):
         return "<HeapNode id:{} value:{}>".format(self.id, self.value)
 
+
 # Implementation of Min Heap using a list to represent a binary tree
 # Use as priority queue for Dijkstras shortest path
 class MinHeap():
 
     def __init__(self, v_dict):
 
-        # initialize queue with infinity values
-        # self.b_tree_list = [ HeapNode(vertex_key, v_dict[vertex_key]) for vertex_key in v_dict ]
         self.b_tree_list = []
         self.size = 0
+
         for vertex_key in v_dict:
-            self.insert(HeapNode(vertex_key, v_dict[vertex_key]))
+            self.insert( HeapNode(vertex_key, v_dict[vertex_key]) )
+
 
     def __str__(self):
+
         buffer = ""
         for node in self.b_tree_list:
             buffer += str(node)
+
         return buffer
+
+
+    # place new node at bottom of tree and let bubble up
+    def insert(self, n):
+
+        self.b_tree_list.append(n)
+        self.size += 1
+        self.bubbleup(n, self.size-1)
+
 
     # return the index of the smaller child of node at location: i
     def minchild(self, i):
@@ -62,41 +74,45 @@ class MinHeap():
             else:
                 return right_index
 
+
     # place HeapNode: x in position: i of heap and let it trickle down
     def siftdown(self, x, i):
     
         child_index = self.minchild(i)
         
-        # move child nodes up until x > child
+        # find position for x by checking if child value smaller than x
         while child_index != None and self.b_tree_list[child_index] < x:
+            
             self.b_tree_list[i] = self.b_tree_list[child_index]
             i = child_index
             child_index = self.minchild(i)
 
         self.b_tree_list[i] = x # insert x in cleared spot
 
+
     # place HeapNode: x in position: i of heap and let it bubble up
     def bubbleup(self, x, i):
        
         parent_index = (i-1) // 2
 
+        # while not at root and the parent index larger value than x value
         while i != 0 and self.b_tree_list[parent_index] > x:
+
             self.b_tree_list[i] = self.b_tree_list[parent_index]
             i = parent_index
             parent_index = (i-1) // 2
 
         self.b_tree_list[i] = x
 
+
     def decreasekey(self, x):
 
         # locate vertex data in heap
         index = self.b_tree_list.index(x)
 
-        # update value
-        #self.b_tree_list[index].value = new_value
-
         # trickle value up, always assumes decrese in value
         self.bubbleup(x, index)
+
 
     # retrun the value and node id at the root
     def deletemin(self):
@@ -118,32 +134,6 @@ class MinHeap():
 
             return id_value
     
-    def insert(self, n):
-        self.b_tree_list.append(n)
-        self.size += 1
-        self.bubbleup(n, self.size-1)
-
-# ARRAY BASED IMPLENTATION
-# def makequeue(V):
-
-#     return [[v, inf] for v in V]
-
-
-# def deletemin(Q):
-    
-#     i = Q.index(min(Q, key=lambda x: x[1]))
-
-#     return Q.pop(i)[0]
-
-
-# def decreasekey(Q, v, new):
-
-#     # find v in Q and decrease value by 1
-#     for key_value in Q:
-#         if key_value[0] == v:
-#             Q[Q.index(key_value)][1] = new
-#             break
-
 
 # DPV Figure 4.8 Dijkstra's Shortest Path
 # Input: G is a graph (V, E) undirected, 
@@ -152,22 +142,22 @@ class MinHeap():
 # Output: for all vertices u reachable from s, dist(u) is set to the distance fro s to u
 def dijkstra(G, l, s):
     
-    V, E = G
+    V, E = G # break graph into vertices and edges
 
-    dist = dict()
-    prev = dict()
+    dist = dict() # distance form s
+    prev = dict() # previous, for retracing shortest path
     
-    # initialize distance and previous dicts
+    # initialize values for distance and previous dicts
     for vertex_id in V:
         dist[vertex_id] = inf
         prev[vertex_id] = None
-    dist[s] = 0
+    dist[s] = 0 # set distance form source to 0
 
     heap = MinHeap(dist)
 
-    while heap.size > 0: # while H is not empty
+    while heap.size > 0: # while heap is not empty
 
-        u = heap.deletemin().id
+        u = heap.deletemin().id # pop smallest emlement from heap (root)
 
         for edge in E:
 
@@ -176,16 +166,17 @@ def dijkstra(G, l, s):
  
                 v = edge[1]
 
+                # check if newly found distance less than current set distance
                 if dist[v] > dist[u] + l[edge]:
         
-                    dist[v] = dist[u] + l[edge]
-                    prev[v] = u
-                    heap.decreasekey(HeapNode(v, dist[v]))
+                    dist[v] = dist[u] + l[edge]             # update distance dict
+                    prev[v] = u                             # 
+                    heap.decreasekey(HeapNode(v, dist[v]))  # update distance in heap
                     
-
     return dist, prev
 
 
+# returns a list of the graph verticies traversed from the source to vertex v
 def getPathList(path, v):
     
     path_list = []
@@ -203,22 +194,15 @@ def getPathList(path, v):
     return path_list
 
 
-# g1_file = input("Graph Data File: ")
-# s = input("Source Vertex: ")
+file_name = input("Graph Data File: ")
+s = int(input("Source Vertex: "))
 
-output_file = "hw7_out.txt"
-g1_file = "dijk_graph20.txt"
-test_file1 = "test_graph.txt"
-test_file2 = "dijk_graph5.txt"
-
-f_in = open(test_file2, "r")
-f_out = open(output_file, "w")
+f_in = open(file_name, "r")
 
 # initialize variables
 V = set()   # verticies
 E = set()   # edges
 l = dict()  # positive edge lengths
-s = 30      # source vertex
 
 # parse edge data from each line in file
 # graph is undirected but src and dst are used for convenience
@@ -237,6 +221,6 @@ distances, path = dijkstra(G, l, s)
 
 for d in distances:
     
-    print("{} {} {}".format(d, distances[d], getPathList(path, d)))
+    print("path {} {} {}".format(d, distances[d], getPathList(path, d)))
 
     
