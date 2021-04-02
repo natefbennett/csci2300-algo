@@ -1,0 +1,29 @@
+
+-- Lab 8: Kruskal's Algorithm and Union-Find Data Structure --
+
+Testing Graph: kruskal_graph100.txt
+-Without Compression-
+MST Cost: 263492 Root Rank: 6 Height: 6
+Time: 0.2031
+
+-With Compression-
+MST Cost: 263492 Root Rank: 6 Height: 4
+Time: 0.2031
+
+Testing Graph: kruskal_graph1000.txt
+-Without Compression-
+MST Cost: 786722 Root Rank: 8 Height: 8
+Time: 5.4219
+
+-With Compression-
+MST Cost: 786722 Root Rank: 8 Height: 4
+Time: 4.6406
+
+Testing Graph: kruskal_graph10000.txt
+-Without Compression-
+MST Cost: 7448724 Root Rank: 9 Height: 9
+Time: 59.5938
+
+-With Compression-
+MST Cost: 7448724 Root Rank: 9 Height: 4
+Time: 54.3125

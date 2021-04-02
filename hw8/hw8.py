@@ -1,44 +1,34 @@
 import time
 
-class TreeNode():
-
-    def __init__(self, v):
-        self.id = v
-        self.rank = 0
-        self.parent = self
-
-    def __eq__(self, other):
-        return self.id == other.id
-
-    def __repr__(self):
-        return "<TreeNode id:{} rank:{} parent:{}>".format(self.id, self.rank, self.parent)
-
 # maintain forest of trees
 class UnionFind():
 
     def __init__(self, c):
         self.node_list = []
+        self.pi = dict() # store parents
+        self.rank = dict()
         self.compressed = c
 
     # initialize vertex in datastructure
     def makeset(self, x):
-        node = TreeNode(x)
-        self.node_list.append(node)
+        self.node_list.append(x)
+        self.pi[x] = x    # initialize parent
+        self.rank[x] = 0  # initialize rank
 
     def find(self, x):
 
-        while x != x.parent: # root check
-            x = x.parent
+        while x != self.pi[x]: # root check
+            x = self.pi[x]
 
         return x
 
     # find that uses compression, recursive
     def find_c(self, x):
         
-        if x != x.parent: # root check
-            x.parent = self.find_c(x.parent)
+        if x != self.pi[x]: # root check
+            self.pi[x] = self.find_c(self.pi[x])
 
-        return x.parent
+        return self.pi[x]
 
     # merge x and y
     def union(self, x, y):
@@ -53,34 +43,35 @@ class UnionFind():
         if r_x == r_y: return # x and y roots are the same, ignore
         # check which tree is taller and
         # point root of the shorter tree to root of the taller tree
-        if r_x.rank > r_y.rank:
-            r_y.parent = r_x
+        if self.rank[r_x] > self.rank[r_y]:
+            self.pi[r_y] = r_x
         else:
-            r_x.parent = r_y
+            self.pi[r_x] = r_y
             # increment rank of root if needed
-            if r_x.rank == r_y.rank:
-                r_y.rank += 1
-
-    def lookup(self, id):
-        return self.node_list[self.node_list.index(TreeNode(id))]
+            if self.rank[r_x] == self.rank[r_y]:
+                self.rank[r_y] += 1
 
     def getRootRank(self):
-        root = self.find(self.node_list[0])
-        return root.rank
+        root = self.find(self.node_list[0]) # pick a node and traverse parents
+        return self.rank[root]
 
     def getHeight(self):
         
-        height_list = []
+        max_height = 0
 
         # record distance from all nodes to root
         for node in self.node_list:
+            
             height = 0
-            while node != node.parent: # root check
-                node = node.parent
+            
+            while node != self.pi[node]: # root check
+                node = self.pi[node]
                 height += 1
-            height_list.append(height)
+            
+            if height > max_height: 
+                max_height = height
         
-        return max(height_list)
+        return max_height
 
 
 # DPV Figure 5.4 Kruskal's Minimum Spanning Tree Algorithm
@@ -106,66 +97,76 @@ def kruskal(G, w, c=False):
     for edge, weight in sorted_w:
         
         u, v = edge
-        # since u and v are just ids we need to look up in node list
-        node_u = uf.lookup(u)
-        node_v = uf.lookup(v)
         
         # check if compressed
         if c:
-            r_u = uf.find_c(node_u)
-            r_v = uf.find_c(node_v)
+            r_u = uf.find_c(u)
+            r_v = uf.find_c(v)
         else:
-            r_u = uf.find(node_u)
-            r_v = uf.find(node_v)
+            r_u = uf.find(u)
+            r_v = uf.find(v)
 
         # if root not the same
         if r_u != r_v:
             X[edge] = weight  # add edge to list
-            uf.union(node_u, node_v) # merge associated trees
+            uf.union(u, v) # merge associated trees
 
     return X, uf
 
-file_name = "kruskal_graph100.txt"
-f_in = open(file_name, "r")
 
-# initialize variables
-V = set()   # verticies
-E = set()   # edges
-w = dict()  # positive edge lengths
+def run(file_name):
 
-# parse edge data from each line in file
-# graph is undirected but src and dst are used for convenience
-for edge_data in f_in:
+    f_in = open(file_name, "r")
 
-    src, dst, wgt = [ int(x) for x in edge_data.split() ] # source, destination, weight
-    edge = (src, dst)
-    E.add(edge)
-    V.update(edge)
-    w[edge] = wgt
+    # initialize variables
+    V = set()   # verticies
+    E = set()   # edges
+    w = dict()  # positive edge lengths
 
-G = (V, E) # pack graph data
+    # parse edge data from each line in file
+    # graph is undirected but src and dst are used for convenience
+    for edge_data in f_in:
 
-# run kruskal to find a MST (minimum spanning tree)
-# without compression
-start_time = time.process_time()
-mst_edges, mst = kruskal(G, w)
-run_time = round(time.process_time() - start_time, 4)
-mst_cost = sum(mst_edges.values())
+        src, dst, wgt = [ int(x) for x in edge_data.split() ] # source, destination, weight
+        edge = (src, dst)
+        E.add(edge)
+        V.update(edge)
+        w[edge] = wgt
 
-# with compression
-start_time = time.process_time()
-mst_edges_c, mst_c = kruskal(G, w, True)
-run_time_c = round(time.process_time() - start_time, 4)
-mst_cost_c = sum(mst_edges_c.values())
+    G = (V, E) # pack graph data
+
+    # run kruskal to find a MST (minimum spanning tree)
+    # without compression
+    start_time = time.process_time()
+    mst_edges, mst = kruskal(G, w)
+    run_time = round(time.process_time() - start_time, 4)
+    mst_cost = sum(mst_edges.values())
+
+    # with compression
+    start_time = time.process_time()
+    mst_edges_c, mst_c = kruskal(G, w, True)
+    run_time_c = round(time.process_time() - start_time, 4)
+    mst_cost_c = sum(mst_edges_c.values())   
+
+    print("Testing Graph: {}".format(file_name))
+
+    # print results without compression
+    print("-Without Compression-")
+    print("MST Cost: {} Root Rank: {} Height: {}".format(mst_cost, mst.getRootRank(), mst.getHeight()))
+    print("Time: {}\n".format(run_time))
+
+    # print results with compression
+    print("-With Compression-")
+    print("MST Cost: {} Root Rank: {} Height: {}".format(mst_cost_c, mst_c.getRootRank(), mst_c.getHeight()))
+    print("Time: {}\n".format(run_time_c))
+
 
 print('\n-- Lab 8: Kruskal\'s Algorithm and Union-Find Data Structure --\n')
 
-# print results without compression
-print("Without Compression")
-print("MST Cost: {} Root Rank: {} Height: {}".format(mst_cost, mst.getRootRank(), mst.getHeight()))
-print("Time: {}\n".format(run_time))
+files = [ "kruskal_graph100.txt",     
+          "kruskal_graph1000.txt",    
+          "kruskal_graph10000.txt" ]
 
-# print results with compression
-print("With Compression")
-print("MST Cost: {} Root Rank: {} Height: {}".format(mst_cost_c, mst_c.getRootRank(), mst_c.getHeight()))
-print("Time: {}\n".format(run_time_c))
+# test all input files
+for file in files:
+    run(file)
